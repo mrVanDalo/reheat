@@ -1,0 +1,22 @@
+name: reheat
+version: 0.0.1
+cabal-version: >=1.2
+build-type: Simple
+license: AllRightsReserved
+license-file: ""
+data-dir: ""
+ 
+executable reheat
+    build-depends: QuickCheck -any, base -any, ncurses -any
+    main-is: Main.hs
+    buildable: True
+    hs-source-dirs: src
+    other-modules: TaskView
+ 
+test-suite test-reheat
+    build-depends: QuickCheck -any, base -any, ncurses -any
+    type: exitcode-stdio-1.0
+    main-is: Main.hs
+    buildable: True
+    cpp-options: -DMAIN_FUNCTION=testMain
+    hs-source-dirs: src
