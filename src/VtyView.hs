@@ -88,6 +88,12 @@ main = do
         KASCII 'a' -> do
             switchToDialog
             return True
+        KASCII 'j' -> do
+            scrollDown leftList
+            return True
+        KASCII 'k' -> do
+            scrollUp leftList
+            return True
         KASCII 'd' -> do
             item <- getSelected leftList
             case item of
@@ -97,16 +103,10 @@ main = do
                     -- unappendTask (full - 1 - itemNr) tasks leftList
                     unappendTask itemNr tasks leftList
                     return True
-        KASCII 'i' -> do
-            item <- getSelected leftList
-            case item of
-                Nothing -> return True
-                Just (itemNr, itemElem) -> do
-                    moveInto (fst itemElem) tasks leftList
-                    return True
-        KASCII 'o' -> do
-            moveOut tasks leftList
-            return True
+        KRight     -> manoverRight tasks leftList
+        KASCII 'l' -> manoverRight tasks leftList
+        KASCII 'o' -> manoverLeft tasks leftList
+        KLeft      -> manoverLeft tasks leftList
 
         _ -> return False
 
@@ -121,6 +121,18 @@ main = do
     setList tasks leftList
 
     runUi c defaultContext
+
+manoverRight tasks leftList = do
+    item <- getSelected leftList
+    case item of
+        Nothing -> return True
+        Just (itemNr, itemElem) -> do
+            moveInto (fst itemElem) tasks leftList
+            return True
+
+manoverLeft tasks leftList = do
+    moveOut tasks leftList
+    return True
 
 activeTasks :: IORef Tasks -> IO [Task]
 activeTasks ref = do
