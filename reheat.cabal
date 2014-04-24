@@ -9,25 +9,25 @@ data-dir: ""
  
 executable reheat
     build-depends: QuickCheck -any, base -any, directory -any,
-                   hscurses -any, text -any, vty -any, vty-ui -any
+                   text -any, vty -any, vty-ui -any
     main-is: Main.hs
     buildable: True
     hs-source-dirs: src
-    other-modules: Task TaskView
+    other-modules: Task
  
-test-suite test-task
+test-suite test-reheat
     build-depends: QuickCheck -any, base -any, directory -any,
-                   hscurses -any, text -any, vty -any, vty-ui -any
+                   text -any, vty -any, vty-ui -any
     type: exitcode-stdio-1.0
-    main-is: Task.hs
+    main-is: Main.hs
     buildable: True
     cpp-options: -DMAIN_FUNCTION=testMain
     hs-source-dirs: src
-test-suite test-reheat
+test-suite test-task
     build-depends: QuickCheck -any, base -any, directory -any,
-                   hscurses -any, text -any, vty -any, vty-ui -any
+                   text -any, vty -any, vty-ui -any
     type: exitcode-stdio-1.0
-    main-is: Main.hs
+    main-is: Task.hs
     buildable: True
     cpp-options: -DMAIN_FUNCTION=testMain
     hs-source-dirs: src
