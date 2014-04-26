@@ -2,11 +2,11 @@
 -----------------------------------------------------------------------------
 --
 -- Module      :  VtyView
--- Copyright   :
+-- Copyright   :  GPL v3
 -- License     :  AllRightsReserved
 --
--- Maintainer  :
--- Stability   :
+-- Maintainer  :  Ingolf Wagner <palipalo9@gmail.com>
+-- Stability   :  experimental
 -- Portability :
 --
 -- |
@@ -14,8 +14,7 @@
 -----------------------------------------------------------------------------
 
 module VtyView (
-    main,
-    main2
+    main
 ) where
 
 import System.Exit
@@ -29,40 +28,36 @@ import System.Directory
 import Task
 import Data.IORef
 
+import Context
+
 import qualified Data.Text as T
 
 -- | To be interpreted by the Main
 data Action = Exit | OpenCreateTaskDialog | MoveInto Task | MoveOut | CreateTask Task
 
-main2 = do
-    let filePath = "foo"
-    tasks <- readFromFile filePath
-    putStr . show $ tasks
-    writeToFile (filePath ++ ".tmp") =<< newIORef tasks
-
 main = do
     let filePath = ".todo.rht"
-    tasks <- newIORef =<< readFromFile filePath
-    leftList <- newTaskList []
-    fullText <- textWidget wrap "Welcome to Reheat"
-    rightList <- newTaskList []
 
-    box <- bordered =<< (bordered =<< plainText "[a : add] [d : delete] [i: in] [o: out]") <--> bordered leftList <++>
-        (bordered fullText <--> bordered rightList)
+    context <- createContext filePath
+
+    let lList    = leftList context
+        fullText =  description context
+        rList    = rightList context
+
+    box <- bordered =<< (bordered =<< plainText "[active list]") <--> bordered lList <++>
+        (bordered fullText <--> bordered rList)
 
     fg  <- newFocusGroup
-    addToFocusGroup fg leftList
+    addToFocusGroup fg lList
 
     editor <- multiLineEditWidget
     eFg <- newFocusGroup
     addToFocusGroup eFg editor
-    pe <- plainText "Header" <--> return editor >>= withBoxSpacing 1
-    (d, dFg) <- newDialog pe "Enter new Entrie"
-    dialog <- centered =<< withPadding (padLeftRight 2) (dialogWidget d)
+    d <- plainText "Header" <--> return editor >>= withBoxSpacing 1
 
     c <- newCollection
     switchToMain <- addToCollection c box fg
-    switchToDialog <- addToCollection c dialog =<< (mergeFocusGroups eFg dFg)
+    switchToDialog <- addToCollection c d eFg
 
     editor `onKeyPressed` \this key mod -> case key of
         KEsc -> do
@@ -70,165 +65,76 @@ main = do
             return True
         _ -> return False
 
-    d `onDialogAccept` \this -> do
-        text <- getEditText editor
-        appendTask tasks leftList (Comment (T.unpack text) [])
-        setEditText editor ""
-        focus editor
-        switchToMain
+    editor `onKeyPressed` \_ key _ -> case key of
+        KEsc -> do
+            text <- getEditText editor
+            case text of
+                "" ->  do
+                    switchToMain
+                    return True
+                _ -> do
+                    appendTask context (Comment (T.unpack text) [])
+                    setEditText editor ""
+                    focus editor
+                    switchToMain
+                    return True
+        _ -> do
+            return False
 
-    d `onDialogCancel` \this -> do
-        switchToMain
-
-    leftList  `onKeyPressed` \this key whatever -> case key of
+    lList  `onKeyPressed` \this key whatever -> case key of
         KASCII 'q' -> do
-            writeToFile filePath tasks
+            writeToFile filePath (tasks context)
             exitSuccess
             return True
         KASCII 'a' -> do
             switchToDialog
             return True
         KASCII 'j' -> do
-            scrollDown leftList
+            scrollDown $ leftList context
             return True
         KASCII 'k' -> do
-            scrollUp leftList
+            scrollUp $ leftList context
             return True
         KASCII 'd' -> do
-            item <- getSelected leftList
+            item <- getSelected $ leftList context
             case item of
                 Nothing -> return True
                 Just (itemNr, itemElem) -> do
-                    full <- getListSize leftList
+                    full <- getListSize $ leftList context
                     -- unappendTask (full - 1 - itemNr) tasks leftList
-                    unappendTask itemNr tasks leftList
+                    unappendTask itemNr context
                     return True
-        KRight     -> manoverRight tasks leftList
-        KASCII 'l' -> manoverRight tasks leftList
-        KASCII 'o' -> manoverLeft tasks leftList
-        KLeft      -> manoverLeft tasks leftList
+        KRight     -> manoverRight context
+        KASCII 'l' -> manoverRight context
+        KASCII 'o' -> manoverLeft context
+        KLeft      -> manoverLeft context
 
         _ -> return False
 
-    leftList  `onSelectionChange` \event -> case event of
+    lList  `onSelectionChange` \event -> case event of
         SelectionOff -> do
-            clearList rightList
+            clearList rList
         SelectionOn _ task renderedTask -> do
-            clearList rightList
-            appendTasksToList rightList (reverse (children task))
+            clearList rList
+            appendTasksToList rList (reverse (children task))
             setText fullText $ T.pack (text task)
 
-    setList tasks leftList
+    updateLeftList context
+
 
     runUi c defaultContext
 
-manoverRight tasks leftList = do
-    item <- getSelected leftList
+manoverRight context = do
+    item <- getSelected $ leftList context
     case item of
         Nothing -> return True
         Just (itemNr, itemElem) -> do
-            moveInto (fst itemElem) tasks leftList
+            moveInto (fst itemElem) context
             return True
 
-manoverLeft tasks leftList = do
-    moveOut tasks leftList
+manoverLeft context = do
+    moveOut context
     return True
 
-activeTasks :: IORef Tasks -> IO [Task]
-activeTasks ref = do
-    l <- readIORef ref
-    return $ actual l
 
 
-
-
-type TaskViewList = Widget (List Task Task)
-
--- | creates a new task list
-newTaskList :: [Task] -> IO TaskViewList
-newTaskList tasks = do
-    list <- newList (green `on` black)
-    appendTasksToList list tasks
-    return list
-
--- | Append multiple tasks to list
-appendTasks :: IORef Tasks -> TaskViewList -> [Task] -> IO ()
-appendTasks tasks list tasksToAppend = do
-    modifyIORef tasks $ addTasks tasksToAppend
-    setList tasks list
-
--- | Append single task to list
-appendTask :: IORef Tasks -> TaskViewList -> Task -> IO ()
-appendTask tasks list task = do
-    modifyIORef tasks $ addTask task
-    setList tasks list
-
-unappendTask :: Int -> IORef Tasks -> TaskViewList -> IO ()
-unappendTask index tasks list = do
-    modifyIORef tasks $ removeTask index
-    setList tasks list
-
--- | move into task
-moveInto :: Task -> IORef Tasks -> TaskViewList -> IO ()
-moveInto task tasks list = do
-    modifyIORef tasks $ goInto task
-    setList tasks list
-
--- | move out of the actual task list
-moveOut :: IORef Tasks -> TaskViewList -> IO ()
-moveOut tasks list = do
-    modifyIORef tasks goOut
-    setList tasks list
-
-setList :: IORef Tasks -> TaskViewList -> IO ()
-setList tasks list = do
-    clearList list
-    newTasks <- activeTasks tasks
-    appendTasksToList list (reverse newTasks)
-    setSelected list 0
-    return ()
-
-appendTaskToList l t = appendTasksToList l [t]
-
-appendTasksToList list tasks =
-    forM_ tasks $ \t -> do
-        f <- newTask t
-        b <- bordered f
-        (insertIntoList list t f 0)
-
-
--- | write tasks to file
-writeToFile :: FilePath -> IORef Tasks -> IO ()
-writeToFile fileName wRef = do
-    tasks <- readIORef wRef
-    withFile fileName WriteMode $ \h -> do
-        hPutStr h (show tasks)
-
-readFromFile :: FilePath -> IO Tasks
-readFromFile f = do
-    exist <- doesFileExist f
-    foo exist f
-
-foo :: Bool -> FilePath -> IO Tasks
-foo False _ = return $ emptyTasks
-foo True f  = do
-    withFile f ReadMode $ \h -> do
-        ls <- hGetLine h
-        return $ read ls
-
--- | create a rendarble Task
-newTask :: Task -> IO (Widget Task)
-newTask t = do
-    newWidget t $ \w ->
-        w { render_ =  \this region ctx -> do
-            elem  <- getState this
-            renderTask region ctx elem
-          }
-
--- | Task to Image Renderer
--- renderTask :: DisplayRegion -> RenderContext -> Task -> IO Image
-renderTask region ctx task = do     
-    let s                 = T.pack $ head . lines . text $ task
-        width             = (fromEnum $ region_width region)
-        (truncated, _, _) = clip1d (Phys 0) (Phys width) s
-    return $ string (getNormalAttr ctx) $ T.unpack truncated

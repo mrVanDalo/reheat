@@ -1,10 +1,17 @@
 name: reheat
-version: 0.0.1
+version: 0.1.2
 cabal-version: >=1.2
 build-type: Simple
 license: AllRightsReserved
-license-file: ""
-description:  
+license-file: /home/palo/dev/haskell-workspace/playground/reheat/gpl-3.0.txt
+copyright: GPL v3
+maintainer: Ingolf Wagner <palipalo9@gmail.com>
+stability: experimental
+homepage: https://github.com/mrVanDalo/reheat
+bug-reports: https://github.com/mrVanDalo/reheat/issues
+synopsis: a programm to make notes and reduce impact on idle time on writing other programms.
+description: a programm to make notes and reduce impact on idle time on writing other programms.
+author: Ingolf Wagner
 data-dir: ""
  
 executable reheat
@@ -13,21 +20,13 @@ executable reheat
     main-is: Main.hs
     buildable: True
     hs-source-dirs: src
-    other-modules: Task
+    other-modules: Context Main Task VtyView
  
 test-suite test-reheat
     build-depends: QuickCheck -any, base -any, directory -any,
                    text -any, vty -any, vty-ui -any
     type: exitcode-stdio-1.0
     main-is: Main.hs
-    buildable: True
-    cpp-options: -DMAIN_FUNCTION=testMain
-    hs-source-dirs: src
-test-suite test-task
-    build-depends: QuickCheck -any, base -any, directory -any,
-                   text -any, vty -any, vty-ui -any
-    type: exitcode-stdio-1.0
-    main-is: Task.hs
     buildable: True
     cpp-options: -DMAIN_FUNCTION=testMain
     hs-source-dirs: src

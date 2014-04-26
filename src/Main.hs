@@ -2,11 +2,11 @@
 -----------------------------------------------------------------------------
 --
 -- Module      :  Main
--- Copyright   :
+-- Copyright   :  GPL v3
 -- License     :  AllRightsReserved
 --
--- Maintainer  :
--- Stability   :
+-- Maintainer  :  Ingolf Wagner <palipalo9@gmail.com>
+-- Stability   :  experimental
 -- Portability :
 --
 -- |
