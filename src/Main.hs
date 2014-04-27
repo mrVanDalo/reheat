@@ -2,11 +2,11 @@
 -----------------------------------------------------------------------------
 --
 -- Module      :  Main
--- Copyright   :
+-- Copyright   :  GPL v3
 -- License     :  AllRightsReserved
 --
--- Maintainer  :
--- Stability   :
+-- Maintainer  :  Ingolf Wagner <palipalo9@gmail.com>
+-- Stability   :  experimental
 -- Portability :
 --
 -- |
@@ -22,7 +22,7 @@ import Data.List (stripPrefix)
 import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
 
-import qualified TaskView
+import qualified View
 
 -- Simple function to create a hello message.
 hello s = "Hello " ++ s
@@ -45,7 +45,7 @@ testMain = do
 -- MAIN_FUNCTION is preprocessor macro set to exeMain or testMain.
 -- That way we can use the same file for both an application and for tests.
 #ifndef MAIN_FUNCTION
-#define MAIN_FUNCTION TaskView.mainLoop
+#define MAIN_FUNCTION View.main
 #endif
 main = MAIN_FUNCTION
 
