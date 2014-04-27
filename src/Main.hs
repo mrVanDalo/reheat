@@ -22,7 +22,7 @@ import Data.List (stripPrefix)
 import System.Exit (exitFailure)
 import Test.QuickCheck.All (quickCheckAll)
 
-import qualified VtyView
+import qualified View
 
 -- Simple function to create a hello message.
 hello s = "Hello " ++ s
@@ -45,7 +45,7 @@ testMain = do
 -- MAIN_FUNCTION is preprocessor macro set to exeMain or testMain.
 -- That way we can use the same file for both an application and for tests.
 #ifndef MAIN_FUNCTION
-#define MAIN_FUNCTION VtyView.main
+#define MAIN_FUNCTION View.main
 #endif
 main = MAIN_FUNCTION
 

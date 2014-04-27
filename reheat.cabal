@@ -20,7 +20,7 @@ executable reheat
     main-is: Main.hs
     buildable: True
     hs-source-dirs: src
-    other-modules: Context Main Task VtyView
+    other-modules: Context Main View Task Task.Modification Task.Data
  
 test-suite test-reheat
     build-depends: QuickCheck -any, base -any, directory -any,

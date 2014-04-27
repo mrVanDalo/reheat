@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module VtyView (
+module View (
     main
 ) where
 
@@ -41,10 +41,11 @@ main = do
     context <- createContext filePath
 
     let lList    = leftList context
-        fullText =  description context
+        fullText = description context
         rList    = rightList context
+        b        = bread context
 
-    box <- bordered =<< (bordered =<< plainText "[active list]") <--> bordered lList <++>
+    box <- (bordered b) <--> bordered lList <++>
         (bordered fullText <--> bordered rList)
 
     fg  <- newFocusGroup
@@ -120,7 +121,6 @@ main = do
             setText fullText $ T.pack (text task)
 
     updateLeftList context
-
 
     runUi c defaultContext
 
