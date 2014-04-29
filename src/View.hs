@@ -52,12 +52,12 @@ main = do
     addToFocusGroup fg lList
 
     editor <- multiLineEditWidget
-    eFg <- newFocusGroup
+    eFg    <- newFocusGroup
     addToFocusGroup eFg editor
-    d <- plainText "Header" <--> return editor >>= withBoxSpacing 1
+    d      <- plainText "Header" <--> return editor >>= withBoxSpacing 1
 
     c <- newCollection
-    switchToMain <- addToCollection c box fg
+    switchToMain   <- addToCollection c box fg
     switchToDialog <- addToCollection c d eFg
 
     editor `onKeyPressed` \this key mod -> case key of
@@ -83,28 +83,16 @@ main = do
             return False
 
     lList  `onKeyPressed` \this key whatever -> case key of
-        KASCII 'q' -> do
-            writeToFile filePath (tasks context)
-            exitSuccess
-            return True
+        KASCII 'q' -> closeApp filePath context
+        KEsc       -> closeApp filePath context
         KASCII 'a' -> do
             switchToDialog
             return True
-        KASCII 'j' -> do
-            scrollDown $ leftList context
-            return True
-        KASCII 'k' -> do
-            scrollUp $ leftList context
-            return True
-        KASCII 'd' -> do
-            item <- getSelected $ leftList context
-            case item of
-                Nothing -> return True
-                Just (itemNr, itemElem) -> do
-                    full <- getListSize $ leftList context
-                    -- unappendTask (full - 1 - itemNr) tasks leftList
-                    unappendTask itemNr context
-                    return True
+        KASCII 'j' -> manoverDown context
+        KASCII 'J' -> manoverSwap Down context
+        KASCII 'k' -> manoverUp context
+        KASCII 'K' -> manoverSwap Up context
+        KASCII 'd' -> deleteTask context
         KRight     -> manoverRight context
         KASCII 'l' -> manoverRight context
         KASCII 'o' -> manoverLeft context
@@ -124,6 +112,38 @@ main = do
 
     runUi c defaultContext
 
+
+deleteTask context = do
+    item <- getSelected $ leftList context
+    case item of
+        Nothing -> return True
+        Just (itemNr, itemElem) -> do
+            full <- getListSize $ leftList context
+            -- unappendTask (full - 1 - itemNr) tasks leftList
+            unappendTask itemNr context
+            return True
+
+closeApp filePath context = do
+    writeToFile filePath (tasks context)
+    exitSuccess
+    return True
+
+data Direction = Up | Down
+
+manoverSwap direction context = do
+    item <- getSelected $ leftList context
+    case item of
+        Nothing -> return True
+        Just (itemNr, itemElem) -> do
+            swapTasks' itemNr (other direction itemNr) context
+            setSelected (leftList context) (other direction itemNr)
+            return True
+    where
+        other Up   a = a - 1
+        other Down a = a + 1
+
+
+
 manoverRight context = do
     item <- getSelected $ leftList context
     case item of
@@ -136,5 +156,10 @@ manoverLeft context = do
     moveOut context
     return True
 
+manoverDown context = do
+    scrollDown $ leftList context
+    return True
 
-
+manoverUp context = do
+    scrollUp $ leftList context
+    return True

@@ -91,13 +91,17 @@ moveInto task context = do
     modifyIORef (tasks context) $ goInto task
     updateLeftList context
 
-
-
 -- | move out of the actual task list
 moveOut :: Context -> IO ()
 moveOut context = do
     modifyIORef (tasks context) goOut
     updateLeftList context
+
+swapTasks' :: Int -> Int -> Context -> IO ()
+swapTasks' a b context = do
+    modifyIORef (tasks context) $ swapTasks a b
+    updateLeftList context
+
 
 -- | clear list and set tasks to that value
 setList :: [Task] -> TaskViewList -> IO ()
@@ -122,6 +126,11 @@ appendTasksToList list tasks =
         (insertIntoList list t f 0)
 
 
+
+
+{- write and read from and to file here -}
+
+
 -- | write tasks to file
 writeToFile :: FilePath -> IORef Tasks -> IO ()
 writeToFile fileName wRef = do
@@ -139,6 +148,9 @@ readFromFile f = do
             withFile f ReadMode $ \h -> do
                 ls <- hGetLine h
                 return $ readTasks $ read ls
+
+
+{- render Task stuff here -}
 
 
 -- | create a rendarble Task
@@ -162,7 +174,7 @@ renderTask region ctx task = do
 
 
 
--- | bread crumbs here
+{- bread crumbs here -}
 
 
 updateBreadCrumbs :: Context -> IO ()

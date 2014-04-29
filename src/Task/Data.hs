@@ -20,8 +20,8 @@ emptyTasks :: Tasks
 emptyTasks = Tasks []  []
 
 data Task = Comment { text :: String , children :: [Task] } deriving (Eq,Show)
-data Tasks = Tasks { actual :: [Task], history ::  [FTask] } deriving (Show)
-data FTask = FTask { focused :: Task, prev  :: [Task], next :: [Task] } deriving (Show)
+data Tasks = Tasks { actual :: [Task], history ::  [FTask] } deriving (Eq,Show)
+data FTask = FTask { focused :: Task, prev  :: [Task], next :: [Task] } deriving (Eq,Show)
 
 -- | data types for saveing
 -- don't use getter and setter names, to not interfere with the
