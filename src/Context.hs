@@ -51,39 +51,13 @@ createContext filePath = do
     rightList  <- newTaskList []
     return $ Context fullText bread leftList rightList tasks
 
--- | creates a new task list
-newTaskList :: [Task] -> IO TaskViewList
-newTaskList tasks = do
-    list <- newList (green `on` black)
-    appendTasksToList list tasks
-    return list
 
+{- =======================================================
 
--- | Append single task to list
-appendTask :: Context -> Task -> IO ()
-appendTask context task = do
-    modifyIORef (tasks context) $ addTask task
-    updateLeftList context
+   manipulation stuff here
 
--- | updates left list in context
-updateLeftList :: Context -> IO ()
-updateLeftList context = do
-    t <- readIORef $ tasks context
-    let ts = actual t
-    setList ts (leftList context)
-    updateBreadCrumbs context
-    return ()
+   =======================================================  -}
 
--- | unwrapps the actual task list from the context
-actualTaskList :: Context -> IO [Task]
-actualTaskList context = do
-    t <- readIORef $ tasks context
-    return $ actual t
-
-unappendTask :: Int -> Context -> IO ()
-unappendTask index context = do
-    modifyIORef (tasks context) $ removeTask index
-    updateLeftList context
 
 -- | move into task
 moveInto :: Task -> Context -> IO ()
@@ -103,6 +77,14 @@ swapTasks' a b context = do
     updateLeftList context
 
 
+{- =======================================================
+
+   ui gluing stuff
+
+   =======================================================  -}
+
+
+
 -- | clear list and set tasks to that value
 setList :: [Task] -> TaskViewList -> IO ()
 setList tasks list = do
@@ -111,13 +93,6 @@ setList tasks list = do
     setSelected list 0
     return ()
 
--- | returns the active tasks right now
-activeTasks :: Context -> IO [Task]
-activeTasks context = do
-    l <- readIORef $ tasks context
-    return $ actual l
-
-
 -- | append some tasks to the list
 appendTasksToList list tasks =
     forM_ tasks $ \t -> do
@@ -125,15 +100,53 @@ appendTasksToList list tasks =
         b <- bordered f
         (insertIntoList list t f 0)
 
+-- | creates a new task list
+newTaskList :: [Task] -> IO TaskViewList
+newTaskList tasks = do
+    list <- newList (green `on` black)
+    appendTasksToList list tasks
+    return list
+
+-- | Append single task to list
+appendTask :: Context -> Task -> IO ()
+appendTask context task = do
+    modifyIORef (tasks context) $ addTask task
+    updateLeftList context
+
+-- | updates left list in context
+updateLeftList :: Context -> IO ()
+updateLeftList context = do
+    t <- readIORef $ tasks context
+    let ts = actual t
+    setList ts (leftList context)
+    updateBreadCrumbs context
+    return ()
+
+-- | removes a task from the left list
+unappendTask :: Int -> Context -> IO ()
+unappendTask index context = do
+    modifyIORef (tasks context) $ removeTask index
+    updateLeftList context
 
 
+{- =======================================================
 
-{- write and read from and to file here -}
+   file IO stuff here
 
+   =======================================================  -}
 
 -- | write tasks to file
 writeToFile :: FilePath -> IORef Tasks -> IO ()
 writeToFile fileName wRef = do
+    {- backup first -}
+    exist <- doesFileExist fileName
+    case exist of
+        True -> do
+            copyFile fileName $ fileName ++ ".bak"
+            return ()
+        False -> do
+            return ()
+    {- write stuff -}
     tasks <- readIORef wRef
     withFile fileName WriteMode $ \h -> do
         hPutStr h (show $ saveTasks tasks)
@@ -143,15 +156,20 @@ readFromFile :: FilePath -> IO Tasks
 readFromFile f = do
     exist <- doesFileExist f
     case exist of -- | if is not working here
-        False -> do return $ emptyTasks
+        False -> do
+            return emptyTasks
         True  -> do
             withFile f ReadMode $ \h -> do
                 ls <- hGetLine h
                 return $ readTasks $ read ls
 
 
-{- render Task stuff here -}
 
+{- =======================================================
+
+   render Task stuff here
+
+   =======================================================  -}
 
 -- | create a rendarble Task
 newTask :: Task -> IO (Widget Task)
@@ -161,8 +179,6 @@ newTask t = do
             elem  <- getState this
             renderTask region ctx elem
           }
-
-
 
 -- | Task to Image Renderer
 renderTask :: DisplayRegion -> RenderContext -> Task -> IO Image
@@ -174,7 +190,12 @@ renderTask region ctx task = do
 
 
 
-{- bread crumbs here -}
+
+{- =======================================================
+
+   render breadCrumb stuff here
+
+   =======================================================  -}
 
 
 updateBreadCrumbs :: Context -> IO ()
