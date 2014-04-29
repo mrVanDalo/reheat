@@ -45,7 +45,7 @@ data Context = Context {
     rightList   :: TaskViewList,
     tasks       :: IORef Tasks,
     filePath    :: FilePath,
-    editor      :: EditorType
+    editorType  :: EditorType
     }
 
 -- | create Context out of a file

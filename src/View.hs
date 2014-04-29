@@ -28,6 +28,7 @@ import System.Directory
 import System.Console.GetOpt
 import Control.Monad
 import System.Environment
+import System.Process
 
 
 import Data.Char
@@ -42,7 +43,7 @@ import qualified Data.Text as T
 main = do
     opts <- parseOptions
     context <- createContext $ ioFile opts
-    execMain context { editor = (e opts) }
+    execMain context { editorType = (e opts) }
 
 
 {- =======================================================
@@ -103,7 +104,7 @@ parseOptions = do
    draw UI here
 
    =======================================================  -}
-
+type ContextSwitcher = IO ()
 
 -- | create View and Run loop
 execMain context = do
@@ -152,9 +153,37 @@ execMain context = do
 
    =======================================================  -}
 
-createNewTask context switch = do
+createNewTask :: Context -> ContextSwitcher -> IO Bool
+createNewTask context switch =
+    let e = editorType context
+    in  do
+        foo e context switch
+        return True
+        where
+            foo Vim context _  = do
+                let filePath = "/tmp/foo"
+                system $ "vim" ++ " " ++ filePath
+                exist <- doesFileExist filePath
+                case exist of
+                    True -> do
+                        withFile filePath ReadMode $ (\h -> do
+                            text <- hGetContents h
+                            save text context switch
+                            return True
+                            )
+                    otherwise -> do
+                        return True
+
+            foo _ _ switch = do
+                switch
+                return True
+
+save :: String -> Context -> ContextSwitcher -> IO ()
+save "" context switch   = do ; switch
+save text context switch = do
+    appendTask context (Comment text [])
     switch
-    return True
+
 
 -- | exit editor saves the task and switches back to main view
 editorExitAndSave editor context switchToMain = do
