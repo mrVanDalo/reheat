@@ -25,6 +25,12 @@ import Control.Monad
 import System.IO
 import System.Directory
 
+import System.Console.GetOpt
+import Control.Monad
+
+
+
+
 import Task
 import Data.IORef
 
@@ -34,6 +40,29 @@ import qualified Data.Text as T
 
 
 main = execMain
+
+
+data Options = Options {
+    ioFile :: FilePath,
+    editor :: EditorType
+    }
+
+data EditorType = OwnEditor
+    | ExternalProgramm { executable :: FilePath }
+
+options :: [ OptDescr (Options -> IO Options) ]
+options =
+    [   Option "i" ["input"]
+            (ReqArg
+                (\arg opt -> return opt { ioFile = arg })
+                "FILE")
+            "Input and Output File",
+        Option "e" ["editor"]
+            (ReqArg
+                (\arg opt -> return opt { editor = ExternalProgramm arg })
+                "EXECUTABLE")
+            "path to your favorite editor"
+    ]
 
 
 -- | create View and Run loop
