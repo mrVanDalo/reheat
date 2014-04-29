@@ -131,7 +131,7 @@ execMain context = do
     lList  `onKeyPressed` \this key whatever -> case key of
         KASCII 'q' -> closeApp context
         KEsc       -> closeApp context
-        KASCII 'a' -> createNewTask context switchToDialog
+        KASCII 'a' -> createNewTask context switchToDialog switchToMain
         KASCII 'j' -> manoverDown context
         KASCII 'J' -> manoverSwap Down context
         KASCII 'k' -> manoverUp context
@@ -153,30 +153,39 @@ execMain context = do
 
    =======================================================  -}
 
-createNewTask :: Context -> ContextSwitcher -> IO Bool
-createNewTask context switch =
+createNewTask :: Context -> ContextSwitcher -> ContextSwitcher -> IO Bool
+createNewTask context switchToEditor switchToMain =
     let e = editorType context
     in  do
-        foo e context switch
+        foo e context
         return True
         where
-            foo Vim context _  = do
+            foo Vim context   = do
                 let filePath = "/tmp/foo"
+                removeFile' filePath
                 system $ "vim" ++ " " ++ filePath
                 exist <- doesFileExist filePath
                 case exist of
                     True -> do
                         withFile filePath ReadMode $ (\h -> do
                             text <- hGetContents h
-                            save text context switch
+                            save text context switchToMain
                             return True
                             )
                     otherwise -> do
                         return True
 
-            foo _ _ switch = do
-                switch
+            foo _ _ = do
+                switchToEditor
                 return True
+
+removeFile' :: FilePath -> IO ()
+removeFile' path = do
+    exist <- doesFileExist path
+    case exist of
+        True  -> do removeFile path
+        False -> do return ()
+
 
 save :: String -> Context -> ContextSwitcher -> IO ()
 save "" context switch   = do ; switch
