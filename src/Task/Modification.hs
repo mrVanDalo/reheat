@@ -22,30 +22,26 @@ import Task.Data
 
 -- | bread crumbs
 breadCrumbs :: Tasks -> [Task]
-breadCrumbs (Tasks _ ftasks) = map (\f -> focused f) ftasks
+breadCrumbs (Tasks _ ftasks) = map focused ftasks
 
 -- | swap tasks on the actual path of the Tasks object
 swapTasks :: Int -> Int -> Tasks -> Tasks
 swapTasks a b tasks
-    | a < 0                     = tasks
-    | b < 0                     = tasks
-    | a == b                    = tasks
+    | a < 0                      = tasks
+    | b < 0                      = tasks
+    | a == b                     = tasks
     | a >= length (actual tasks) = tasks
     | b >= length (actual tasks) = tasks
-    | otherwise                 =
+    | otherwise                  =
         let t = actual tasks
             x = t !! a
             y = t !! b
-        in  if x == y then tasks
-        else
-            Tasks (map (\l ->
-            if l == x then
-                y
-            else if l == y then
-                x
-            else
-                l) t)
-                (history tasks)
+        in  Tasks (map (swapper x y)  t) (history tasks)
+        where
+            swapper x y l
+                | l == x = y
+                | l == y = x
+                | otherwise = l
 
 
 -- | go into the children of some tasks
@@ -65,8 +61,7 @@ goOut (Tasks _ ((FTask a b c):xs))   =
         rest   = case xs of
             []                   -> []
             ((FTask n w v):ks)   -> (FTask n { children = actual }  w v):ks
-    in
-        Tasks actual rest
+    in  Tasks actual rest
 
 -- | Add Task to Tasks
 addTask :: Task -> Tasks -> Tasks
@@ -89,15 +84,15 @@ removeTask index tasks
     | index > (length $ actual tasks) = tasks
     | otherwise                       =
         let (ys,zs) = splitAt index (actual tasks)
-            c = ys ++ (tail zs)
-            rest = case (history tasks) of
+            c       = ys ++ (tail zs)
+            rest    = case (history tasks) of
                 []                -> []
                 (FTask p x  y):xs -> (FTask p { children = c }  x  y):xs
         in Tasks c rest
 
--- | depth of the actual focused tasks 0 for top level
+-- | depth of the history
 depth :: Tasks -> Int
-depth (Tasks _  xs) = (length xs) - 1
+depth = length . history
 
 -- | unrolls the tasks untill we have the toplevel
 asList :: Tasks -> [Task]
