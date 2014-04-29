@@ -32,6 +32,11 @@ type TaskDescription      = Widget FormattedText
 type BreadCrumbWidget     = Widget BreadCrumb
 type BreadCrumb           = [Task]
 
+data EditorType = InternalEditor
+    | Vim
+    | Nano
+    | Emacs
+
 
 data Context = Context {
     description :: TaskDescription,
@@ -39,7 +44,8 @@ data Context = Context {
     leftList    :: TaskViewList,
     rightList   :: TaskViewList,
     tasks       :: IORef Tasks,
-    filePath    :: FilePath
+    filePath    :: FilePath,
+    editor      :: EditorType
     }
 
 -- | create Context out of a file
@@ -50,7 +56,7 @@ createContext filePath = do
     fullText   <- textWidget wrap $ T.pack "Welcome to Reheat"
     bread      <- newBreadCrumb []
     rightList  <- newTaskList []
-    return $ Context fullText bread leftList rightList tasks filePath
+    return $ Context fullText bread leftList rightList tasks filePath InternalEditor
 
 
 {- =======================================================

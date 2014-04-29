@@ -30,7 +30,7 @@ import Control.Monad
 import System.Environment
 
 
-
+import Data.Char
 import Task
 import Data.IORef
 
@@ -42,7 +42,7 @@ import qualified Data.Text as T
 main = do
     opts <- parseOptions
     context <- createContext $ ioFile opts
-    execMain context
+    execMain context { editor = (e opts) }
 
 
 {- =======================================================
@@ -53,11 +53,9 @@ main = do
 
 data Options = Options {
     ioFile :: FilePath,
-    editor :: EditorType
+    e      :: EditorType
     }
 
-data EditorType = InternalEditor
-    | ExternalProgramm { executable :: FilePath }
 
 options :: [ OptDescr (Options -> IO Options) ]
 options =
@@ -68,9 +66,14 @@ options =
             "Input and Output File",
         Option "e" ["editor"]
             (ReqArg
-                (\arg opt -> return opt { editor = ExternalProgramm arg })
-                "EXECUTABLE")
-            "path to your favorite editor",
+                (\arg opt -> return opt { e = case (map toLower arg) of
+                    "vim"     -> Vim
+                    "nano"    -> Nano
+                    "emacs"   -> Emacs
+                    otherwise -> InternalEditor
+                    })
+                "vim or nano or emacs or internal")
+            "your favorit editor",
         Option "h" ["help"]
             (NoArg
                 (\_ -> do
@@ -127,7 +130,7 @@ execMain context = do
     lList  `onKeyPressed` \this key whatever -> case key of
         KASCII 'q' -> closeApp context
         KEsc       -> closeApp context
-        KASCII 'a' -> do ; switchToDialog ; return True
+        KASCII 'a' -> createNewTask context switchToDialog
         KASCII 'j' -> manoverDown context
         KASCII 'J' -> manoverSwap Down context
         KASCII 'k' -> manoverUp context
@@ -148,6 +151,10 @@ execMain context = do
    editor functions here
 
    =======================================================  -}
+
+createNewTask context switch = do
+    switch
+    return True
 
 -- | exit editor saves the task and switches back to main view
 editorExitAndSave editor context switchToMain = do
