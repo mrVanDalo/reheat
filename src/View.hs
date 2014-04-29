@@ -70,7 +70,14 @@ options =
             (ReqArg
                 (\arg opt -> return opt { editor = ExternalProgramm arg })
                 "EXECUTABLE")
-            "path to your favorite editor"
+            "path to your favorite editor",
+        Option "h" ["help"]
+            (NoArg
+                (\_ -> do
+                    prg <- getProgName
+                    hPutStrLn stderr (usageInfo prg options)
+                    exitWith ExitSuccess))
+            "Show help"
     ]
 
 startOptions = Options ".todo.rht" InternalEditor
