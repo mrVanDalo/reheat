@@ -30,18 +30,22 @@ swapTasks a b tasks
     | a < 0                     = tasks
     | b < 0                     = tasks
     | a == b                    = tasks
-    | a > length (actual tasks) = tasks
-    | b > length (actual tasks) = tasks
+    | a >= length (actual tasks) = tasks
+    | b >= length (actual tasks) = tasks
     | otherwise                 =
         let t = actual tasks
             x = t !! a
             y = t !! b
         in  if x == y then tasks
         else
-            Tasks (map (\l -> case l of
-            x -> y
-            y -> x
-            _ -> l ) t) (history tasks)
+            Tasks (map (\l ->
+            if l == x then
+                y
+            else if l == y then
+                x
+            else
+                l) t)
+                (history tasks)
 
 
 -- | go into the children of some tasks
