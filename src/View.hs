@@ -79,13 +79,10 @@ execMain = do
         KASCII 'l' -> manoverRight context
         KASCII 'o' -> manoverLeft context
         KLeft      -> manoverLeft context
-
         _ -> return False
-
-    lList  `onSelectionChange` \event -> onListSelectionChanged event context
+    lList  `onSelectionChange` onListSelectionChanged context
 
     updateLeftList context
-
     runUi c defaultContext
 
 {- =======================================================
@@ -116,7 +113,7 @@ editorExitAndSave editor context switchToMain = do
 
    =======================================================  -}
 
-onListSelectionChanged event context =
+onListSelectionChanged context event =
     case event of
         SelectionOff -> do
             clearList $ rightList context
