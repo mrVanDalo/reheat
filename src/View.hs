@@ -32,10 +32,12 @@ import Context
 
 import qualified Data.Text as T
 
--- | To be interpreted by the Main
-data Action = Exit | OpenCreateTaskDialog | MoveInto Task | MoveOut | CreateTask Task
 
-main = do
+main = execMain
+
+
+-- | create View and Run loop
+execMain = do
     let filePath = ".todo.rht"
 
     context <- createContext filePath
@@ -60,34 +62,14 @@ main = do
     switchToMain   <- addToCollection c box fg
     switchToDialog <- addToCollection c d eFg
 
-    editor `onKeyPressed` \this key mod -> case key of
-        KEsc -> do
-            switchToMain
-            return True
-        _ -> return False
-
     editor `onKeyPressed` \_ key _ -> case key of
-        KEsc -> do
-            text <- getEditText editor
-            case text of
-                "" ->  do
-                    switchToMain
-                    return True
-                _ -> do
-                    appendTask context (Comment (T.unpack text) [])
-                    setEditText editor ""
-                    focus editor
-                    switchToMain
-                    return True
-        _ -> do
-            return False
+        KEsc -> editorExitAndSave editor context switchToMain
+        _ -> return False
 
     lList  `onKeyPressed` \this key whatever -> case key of
         KASCII 'q' -> closeApp filePath context
         KEsc       -> closeApp filePath context
-        KASCII 'a' -> do
-            switchToDialog
-            return True
+        KASCII 'a' -> do ; switchToDialog ; return True
         KASCII 'j' -> manoverDown context
         KASCII 'J' -> manoverSwap Down context
         KASCII 'k' -> manoverUp context
@@ -100,18 +82,48 @@ main = do
 
         _ -> return False
 
-    lList  `onSelectionChange` \event -> case event of
-        SelectionOff -> do
-            clearList rList
-        SelectionOn _ task renderedTask -> do
-            clearList rList
-            appendTasksToList rList (reverse (children task))
-            setText fullText $ T.pack (text task)
+    lList  `onSelectionChange` \event -> onListSelectionChanged event context
 
     updateLeftList context
 
     runUi c defaultContext
 
+{- =======================================================
+
+   editor functions here
+
+   =======================================================  -}
+
+-- | exit editor saves the task and switches back to main view
+editorExitAndSave editor context switchToMain = do
+    text <- getEditText editor
+    case text of
+        "" ->  do
+            switchToMain
+            return True
+        _ -> do
+            appendTask context (Comment (T.unpack text) [])
+            setEditText editor ""
+            focus editor
+            switchToMain
+            return True
+
+
+
+{- =======================================================
+
+   manipulation stuff here
+
+   =======================================================  -}
+
+onListSelectionChanged event context =
+    case event of
+        SelectionOff -> do
+            clearList $ rightList context
+        SelectionOn _ task renderedTask -> do
+            clearList $ rightList context
+            appendTasksToList (rightList context) (reverse (children task))
+            setText (description context) $ T.pack (text task)
 
 deleteTask context = do
     item <- getSelected $ leftList context
