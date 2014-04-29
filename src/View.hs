@@ -27,7 +27,7 @@ import System.Directory
 
 import System.Console.GetOpt
 import Control.Monad
-
+import System.Environment
 
 
 
@@ -39,15 +39,24 @@ import Context
 import qualified Data.Text as T
 
 
-main = execMain
+main = do
+    opts <- parseOptions
+    context <- createContext $ ioFile opts
+    execMain context
 
+
+{- =======================================================
+
+   option parsing here
+
+   =======================================================  -}
 
 data Options = Options {
     ioFile :: FilePath,
     editor :: EditorType
     }
 
-data EditorType = OwnEditor
+data EditorType = InternalEditor
     | ExternalProgramm { executable :: FilePath }
 
 options :: [ OptDescr (Options -> IO Options) ]
@@ -64,20 +73,33 @@ options =
             "path to your favorite editor"
     ]
 
+startOptions = Options ".todo.rht" InternalEditor
+
+-- | parses options from command line
+parseOptions = do
+    args <- getArgs
+
+    -- Parse options, getting a list of option actions
+    let (actions, nonOptions, errors) = getOpt RequireOrder options args
+
+    -- Here we thread startOptions through all supplied option actions
+    opts <- foldl (>>=) (return startOptions) actions
+
+    return opts
+
+
+{- =======================================================
+
+   draw UI here
+
+   =======================================================  -}
+
 
 -- | create View and Run loop
-execMain = do
-    let filePath = ".todo.rht"
-
-    context <- createContext filePath
-
+execMain context = do
     let lList    = leftList context
-        fullText = description context
-        rList    = rightList context
-        b        = bread context
-
-    box <- (bordered b) <--> bordered lList <++>
-        (bordered fullText <--> bordered rList)
+    box <- (bordered $ bread context) <--> bordered lList <++>
+        (bordered (description context) <--> bordered (rightList context))
 
     fg  <- newFocusGroup
     addToFocusGroup fg lList
@@ -96,8 +118,8 @@ execMain = do
         _ -> return False
 
     lList  `onKeyPressed` \this key whatever -> case key of
-        KASCII 'q' -> closeApp filePath context
-        KEsc       -> closeApp filePath context
+        KASCII 'q' -> closeApp context
+        KEsc       -> closeApp context
         KASCII 'a' -> do ; switchToDialog ; return True
         KASCII 'j' -> manoverDown context
         KASCII 'J' -> manoverSwap Down context
@@ -161,8 +183,8 @@ deleteTask context = do
             unappendTask itemNr context
             return True
 
-closeApp filePath context = do
-    writeToFile filePath (tasks context)
+closeApp context = do
+    writeToFile (filePath context) (tasks context)
     exitSuccess
     return True
 

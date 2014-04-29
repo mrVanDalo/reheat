@@ -38,7 +38,8 @@ data Context = Context {
     bread       :: BreadCrumbWidget,
     leftList    :: TaskViewList,
     rightList   :: TaskViewList,
-    tasks       :: IORef Tasks
+    tasks       :: IORef Tasks,
+    filePath    :: FilePath
     }
 
 -- | create Context out of a file
@@ -49,7 +50,7 @@ createContext filePath = do
     fullText   <- textWidget wrap $ T.pack "Welcome to Reheat"
     bread      <- newBreadCrumb []
     rightList  <- newTaskList []
-    return $ Context fullText bread leftList rightList tasks
+    return $ Context fullText bread leftList rightList tasks filePath
 
 
 {- =======================================================
