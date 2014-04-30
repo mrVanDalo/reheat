@@ -56,11 +56,11 @@ goInto task (Tasks ys xs) =
 -- | go out of actual task list and go one level up
 goOut :: Tasks -> Tasks
 goOut (Tasks a [])                   = Tasks a []
-goOut (Tasks _ ((FTask a b c):xs))   =
-    let actual = b ++ a:c
+goOut (Tasks childs ((FTask a b c):xs))   =
+    let actual = b ++ (a { children = childs} ):c
         rest   = case xs of
             []                   -> []
-            ((FTask n w v):ks)   -> (FTask n { children = actual }  w v):ks
+            ((FTask n w v):ks)   -> (FTask n w v):ks
     in  Tasks actual rest
 
 -- | Add Task to Tasks
